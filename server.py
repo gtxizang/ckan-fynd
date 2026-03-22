@@ -30,7 +30,6 @@ mcp = FastMCP(
 
 
 async def _ckan_action(action, params=None):
-    """Call a CKAN action API endpoint and return the result."""
     url = f"{CKAN_URL}/api/3/action/{action}"
     headers = {"Content-Type": "application/json"}
     if CKAN_API_KEY:
@@ -43,6 +42,20 @@ async def _ckan_action(action, params=None):
             return data["result"]
 
 
+def _summarise_dataset(ds):
+    """Trim a dataset dict to the fields useful for an AI assistant."""
+    org = ds.get("organization") or {}
+    return {
+        "name": ds.get("name"),
+        "title": ds.get("title"),
+        "notes": (ds.get("notes") or "")[:300],
+        "organization": org.get("title"),
+        "num_resources": ds.get("num_resources", 0),
+        "tags": [t["name"] for t in ds.get("tags", [])],
+        "metadata_modified": ds.get("metadata_modified"),
+    }
+
+
 # --- Tools ---
 
 @mcp.tool()
@@ -53,10 +66,13 @@ async def dataset_search(
     start: int = 0,
     sort: str = "",
 ) -> str:
-    """Search datasets by keyword, filter, or facet."""
+    """Search datasets by keyword, filter, or facet. Returns summaries; use dataset_show for full metadata."""
     params = {k: v for k, v in {"q": q, "fq": fq, "rows": rows, "start": start, "sort": sort}.items() if v}
     result = await _ckan_action("package_search", params)
-    return json.dumps(result, default=str)
+    return json.dumps({
+        "count": result.get("count", 0),
+        "results": [_summarise_dataset(ds) for ds in result.get("results", [])],
+    }, default=str)
 
 
 @mcp.tool()
