@@ -34,11 +34,31 @@
             records, and explore portal metadata on any CKAN instance.
         </p>
 
-        <p id="target-info"></p>
+        <p id="target-info" style="background: #f0f7ff; border-left: 3px solid #0366d6; padding: 0.75rem 1rem; border-radius: 4px;"></p>
 
         <h2>Connect</h2>
-        <p>Point any MCP client at this server's <code>/mcp</code> endpoint:</p>
+
+        <h3>Claude Code (CLI)</h3>
+        <p>Add the server from your terminal:</p>
+        <pre><code id="claude-code-cmd"></code></pre>
+        <p>Then ask Claude anything about the portal's data.</p>
+
+        <h3>Claude Desktop</h3>
+        <p>Add the following to your <code>claude_desktop_config.json</code>:</p>
+        <pre><code id="claude-desktop-config"></code></pre>
+        <p>
+            Config file location:
+            <code>~/Library/Application Support/Claude/claude_desktop_config.json</code> (macOS),
+            <code>%APPDATA%\Claude\claude_desktop_config.json</code> (Windows).
+            Restart Claude Desktop after editing.
+        </p>
+
+        <h3>Other MCP Clients</h3>
+        <p>Point any MCP-compatible client at the Streamable HTTP endpoint:</p>
         <pre><code id="endpoint-url"></code></pre>
+
+        <h3>Test from Terminal</h3>
+        <pre><code id="curl-example"></code></pre>
 
         <h2>Available Tools</h2>
         <table class="tools">
@@ -78,7 +98,42 @@
     </div>
     <script>
         const base = window.location.origin;
-        document.getElementById("endpoint-url").textContent = base + "/mcp";
+        const mcpUrl = base + "/mcp";
+
+        document.getElementById("endpoint-url").textContent = mcpUrl;
+
+        document.getElementById("claude-code-cmd").textContent =
+            "claude mcp add ckan-fynd --transport http " + mcpUrl;
+
+        document.getElementById("claude-desktop-config").textContent = JSON.stringify({
+            "mcpServers": {
+                "ckan-fynd": {
+                    "type": "streamableHttp",
+                    "url": mcpUrl
+                }
+            }
+        }, null, 2);
+
+        document.getElementById("curl-example").textContent =
+            "curl -X POST " + mcpUrl + " \\\n" +
+            "  -H \"Content-Type: application/json\" \\\n" +
+            "  -H \"Accept: application/json, text/event-stream\" \\\n" +
+            "  -d '{\"jsonrpc\":\"2.0\",\"method\":\"tools/list\",\"id\":1}'";
+
+        fetch("/config")
+            .then(r => r.json())
+            .then(data => {
+                const el = document.getElementById("target-info");
+                if (data.ckan_url) {
+                    const text = document.createTextNode("Currently connected to ");
+                    const link = document.createElement("a");
+                    link.href = data.ckan_url;
+                    link.textContent = data.ckan_url;
+                    el.appendChild(text);
+                    el.appendChild(link);
+                }
+            })
+            .catch(() => {});
     </script>
 </body>
 </html>

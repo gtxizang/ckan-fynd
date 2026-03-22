@@ -19,12 +19,18 @@ async def health(request):
     return JSONResponse({"status": "ok"})
 
 
+async def config(request):
+    from server import CKAN_URL
+    return JSONResponse({"ckan_url": CKAN_URL})
+
+
 # The MCP server's Starlette app handles /mcp internally
 mcp_app = mcp.streamable_http_app()
 
 # Add our landing page and health routes to the MCP app
 mcp_app.routes.insert(0, Route("/", landing))
 mcp_app.routes.insert(1, Route("/health", health))
+mcp_app.routes.insert(2, Route("/config", config))
 
 
 if __name__ == "__main__":
