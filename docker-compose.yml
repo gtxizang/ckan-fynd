@@ -1,0 +1,10 @@
+services:
+  ckan-fynd:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - CKAN_URL=${CKAN_URL:-https://data.gov.ie}
+      - CKAN_API_KEY=${CKAN_API_KEY:-}
+      - DATASTORE_MAX_ROWS=${DATASTORE_MAX_ROWS:-100}
+    restart: unless-stopped
